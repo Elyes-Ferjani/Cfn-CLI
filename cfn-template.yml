@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  Cloudformation template that creates a securitygroup and an ec2 instance for python flask application.
+Parameters:
+  MySubnet:
+    Description: Subnet to deploy ec2 instance.
+    Type: AWS::EC2::Subnet::Id
+Resources:
+  WebServerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group that opens port 80 and 22 # Required 
+      SecurityGroupIngress: 
+      - IpProtocol: tcp 
+        ToPort: 80
+        FromPort: 80
+        CidrIp: "0.0.0.0/0"
+      - IpProtocol: tcp 
+        ToPort: 22
+        FromPort: 22
+        CidrIp: "0.0.0.0/0"
+  WebServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: "String"
+      InstanceType: tc2.micro
+      KeyName: my_key
+      SecurityGroupIds: 
+        - !Ref WebServerSG
+      SubnetId: !Ref MySubnet
+      Tags: 
+        - Key: Name
+          Value: !Sub WebServer of ${AWS::StackName}
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+
+          yum update -y
+          yum install python3 -y 
+
+          pip3 install flask
+
+          FOLDER=""
+
+          cd /home/ec2-user/
+          mkdir templates
+
+          wget $FOLDER/app.py
+          cd templates 
+          wget $FOLDER/index.html
+          wget $FOLDER/result.html
+
+          cd .. 
+          python3 app.py
+Outputs:

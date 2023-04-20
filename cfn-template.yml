@@ -2,9 +2,9 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: |
   Cloudformation template that creates a securitygroup and an ec2 instance for python flask application.
 Parameters:
-  MySubnet:
-    Description: Subnet to deploy ec2 instance.
-    Type: AWS::EC2::Subnet::Id
+  MyKeyPair:
+    Description: keypair to ssh
+    Type: AWS::EC2::KeyPair::KeyName
 Resources:
   WebServerSG:
     Type: AWS::EC2::SecurityGroup
@@ -22,12 +22,11 @@ Resources:
   WebServer:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: "String"
-      InstanceType: tc2.micro
-      KeyName: my_key
+      ImageId: ami-02396cdd13e9a1257
+      InstanceType: t2.micro
+      KeyName: !Ref MyKeyPair
       SecurityGroupIds: 
         - !Ref WebServerSG
-      SubnetId: !Ref MySubnet
       Tags: 
         - Key: Name
           Value: !Sub WebServer of ${AWS::StackName}
@@ -38,18 +37,24 @@ Resources:
           yum update -y
           yum install python3 -y 
 
-          pip3 install flask
+          yum install pip -y
+          pip install flask
 
-          FOLDER=""
+          FOLDER="https://raw.githubusercontent.com/Elyes-Ferjani/Cfn-CLI/main"
 
           cd /home/ec2-user/
           mkdir templates
 
           wget $FOLDER/app.py
           cd templates 
-          wget $FOLDER/index.html
-          wget $FOLDER/result.html
+          wget $FOLDER/templates/index.html
+          wget $FOLDER/templates/result.html
 
           cd .. 
           python3 app.py
 Outputs:
+  PublicDNSName:
+    Description: Public DNS Name for the Web Server 
+    Value: !Sub
+      - http://${WebServerDNSName}   # http://ec2-xx-xxx-xx-xxx.compute-1.amazonaws.com
+      - WebServerDNSName: !GetAtt WebServer.PublicDnsName
